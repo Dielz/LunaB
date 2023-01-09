@@ -46,9 +46,6 @@ module.exports = {
 
     // });
 
-
-
-
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: interaction.guild.id,
@@ -62,7 +59,7 @@ module.exports = {
       player.play(resource);
       connection.subscribe(player)
 
-    }, 3_000);
+    }, 1_000);
 
     // player.play(resource);
     // connection.subscribe(player);
