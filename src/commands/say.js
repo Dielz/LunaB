@@ -54,7 +54,7 @@ module.exports = {
 
 
     setTimeout(() => { 
-      console.log('habla');
+     // console.log('habla');
       const resource = createAudioResource(`C:/Users/Darkf/source/repos/LunaB/src/speech/${channel.id}.mp3`);
       player.play(resource);
       connection.subscribe(player)
