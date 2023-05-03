@@ -25,8 +25,8 @@ module.exports = {
       console.error(`Error: ${error.message} with resource`);
     });
 
-    const resource = createAudioResource('C:/Users/Darkf/source/repos/LunaB/src/speech/hola.mp3');
-    player.play(resource);
+   // const resource = createAudioResource('C:/Users/Darkf/source/repos/LunaB/src/speech/hola.mp3');
+   // player.play(resource);
 
     const connection = joinVoiceChannel({
       channelId: channel.id,
@@ -41,7 +41,7 @@ module.exports = {
     interaction.reply('Hello!');
 
     // Subscribe the connection to the audio player (will play audio on the voice connection)
-    connection.subscribe(player);
+    //connection.subscribe(player);
 
     // subscription could be undefined if the connection is destroyed!
     // if (subscription) {
