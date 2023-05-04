@@ -1,26 +1,30 @@
-const { SlashCommandBuilder, Collection } = require('discord.js');
-const voice = require('elevenlabs-node');
-const gtts = require('node-gtts')('es');
+const { SlashCommandBuilder } = require('discord.js');
+const eleven = require('elevenlabs-node');
 var path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
-const { generateDependencyReport, AudioPlayerStatus, NoSubscriberBehavior, joinVoiceChannel, createAudioPlayer, createAudioResource } = require('@discordjs/voice');
+const { AudioPlayerStatus, NoSubscriberBehavior, joinVoiceChannel, createAudioPlayer, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('say')
     .setDescription('say something')
+    .addStringOption(option =>
+      option.setName('voice')
+        .setDescription('Wich voice should i use?')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Dennise', value: '2AGSW9bXBXFtuYaou83B' },
+          { name: 'Jose luis', value: 'UcTdOmXMAhfQG7IF2mZe' },
+          { name: 'Otro', value: 'ARjf2RfiU8YrKwhOTfbA' },
+        ))
     .addStringOption(option => option.setName('text').setDescription('what ever you want...')),
   //.setGuildOnly(true)
   //.setArgs(1)
   //.setArgsType(['string']),
   async execute(interaction, client) {
 
-    const fileName = 'audio.mp3';
     const text = interaction.options.getString('text');
-    const channel = interaction.member.voice.channel;
-    const voiceChannel = client.channels.cache.get(channel.id);
-    //Error case handling
-    if (!channel) return interaction.channel.send('Please join a Voice Channel first!');
+    const voice = interaction.options.getString('voice');
 
     const player = createAudioPlayer({
       behaviors: {
@@ -28,46 +32,50 @@ module.exports = {
       },
     });
 
-    const connection = joinVoiceChannel({
-      channelId: channel.id,
-      guildId: interaction.guild.id,
-      adapterCreator: voiceChannel.guild.voiceAdapterCreator,//interaction.guild.voiceAdapterCreator,
-    });
-
-    var filepath = path.join(__dirname, `../speech/${channel.id}.mp3`);
-
-
-    // player.on(AudioPlayerStatus.Playing, () => {
-    //   console.log('The audio player has started!');
-    // });
-
-    // player.on('error', error => {
-    //   console.error(`Error: ${error.message} with resource`);
-    // });
-
-
-    // voice.getVoices(process.env.ELEVEN_KEY).then(res => {
-
-    //   console.log(res);
-    // });
     if (text) {
 
-      voice.textToSpeech(process.env.ELEVEN_KEY, process.env.VOICEID, filepath, text, 0.75, 0.75).then(res => {
-        console.log(res);
-        
-        if (res.status === 'ok') {
-          console.log('creating audio', `${channel.id}.mp3`);
-          const resource = createAudioResource(`C:/Users/user/source/repos/LunaB/src/speech/${channel.id}.mp3`);
-          player.play(resource);
-          connection.subscribe(player);
-        }
-      });
-    } else {
+      // await client.commands.get('join').execute(interaction, client);
+      //  console.log(connection);
 
+      //  const connection = getVoiceConnection(interaction.guild.id);
+     // console.log(connection);
+      const channel = interaction.member.voice.channel;
+      const voiceChannel = client.channels.cache.get(channel.id);
+      if (!channel) return interaction.channel.send('Please join a Voice Channel first!');
+
+      const connection = joinVoiceChannel({
+        // debug: true,
+        selfDeaf: false,
+        selfMute: false,
+        channelId: channel.id,
+        guildId: interaction.guild.id,
+        adapterCreator: voiceChannel.guild.voiceAdapterCreator,//interaction.guild.voiceAdapterCreator,
+      });
+
+      // connection.on('stateChange', (old_state, new_state) => {
+      //   console.log('join', 'Connection state change from', old_state.status, 'to', new_state.status)
+      //   // if (old_state.status === VoiceConnectionStatus.Ready && new_state.status === VoiceConnectionStatus.Connecting) {
+      //   //   connection.configureNetworking();
+      //   // }
+      // })
+
+      eleven.textToSpeechStream(process.env.ELEVEN_KEY, voice, text, 0.60, 0.55).then(res => {
+        console.info('eleven trabajando')
+        const resource = createAudioResource(res);
+        player.play(resource);
+        Subscribe = connection.subscribe(player);
+        //  console.log(Subscribe);
+
+      });
+
+      interaction.reply({ content: text, ephemeral: true });
+
+    } else {
       interaction.reply('-_-');
     }
+
     player.on('stateChange', (oldState, newState) => {
-      console.error(`'${oldState.status}' => '${newState.status}'`);
+      console.error(`${oldState.status} => ${newState.status}`);
     });
 
     player.on('error', error => {
@@ -75,45 +83,38 @@ module.exports = {
     });
 
     player.on(AudioPlayerStatus.Idle, () => {
-      console.error('idle');
+      //console.error('idle');
     });
 
     player.on(AudioPlayerStatus.Playing, () => {
-      console.error('playing');
+      // console.error('playing');
     });
 
     player.on(AudioPlayerStatus.Buffering, () => {
-      console.error('Buffering');
+      // console.error('Buffering');
     });
 
     player.on(AudioPlayerStatus.AutoPaused, () => {
-      console.error('AutoPaused');
+      // console.error('AutoPaused');
     });
 
     player.on(AudioPlayerStatus.Paused, () => {
-      console.error('Paused');
+      // console.error('Paused');
     });
 
-    if (text) {
-      interaction.reply(text);
-    }
     // Subscribe the connection to the audio player (will play audio on the voice connection)
-
-
 
     // subscription could be undefined if the connection is destroyed!
     // if (subscription) {
     //   // Unsubscribe after 5 seconds (stop playing audio on the voice connection)
-    //   //setTimeout(() => subscription.unsubscribe(), 3_000_000);
-    //  // setTimeout(() =>  interaction.reply('Estoy aburrida!'), 300_000);  
+    //   setTimeout(() => subscription.unsubscribe(), 3_000_000);
+    //   setTimeout(() => interaction.reply('Estoy aburrida!'), 300_000);
     // }
 
     // checking for ending, leaving VC if true
-    /*player.on(voiceDiscord.AudioPlayerStatus.Idle, () => {
-        connection.destroy();
-    });*/
-
-
+    // player.on(voiceDiscord.AudioPlayerStatus.Idle, () => {
+    //     connection.destroy();
+    // });
 
   },
 };
