@@ -38,7 +38,7 @@ module.exports = {
       //  console.log(connection);
 
       //  const connection = getVoiceConnection(interaction.guild.id);
-     // console.log(connection);
+      // console.log(connection);
       const channel = interaction.member.voice.channel;
       const voiceChannel = client.channels.cache.get(channel.id);
       if (!channel) return interaction.channel.send('Please join a Voice Channel first!');
@@ -59,16 +59,26 @@ module.exports = {
       //   // }
       // })
 
-      eleven.textToSpeechStream(process.env.ELEVEN_KEY, voice, text, 0.60, 0.55).then(res => {
-        console.info('eleven trabajando')
-        const resource = createAudioResource(res);
-        player.play(resource);
-        Subscribe = connection.subscribe(player);
-        //  console.log(Subscribe);
+      eleven.textToSpeechStream(process.env.ELEVEN_KEY, voice, `${text}.`, 0.60, 0.55).then(res => {
 
+        if (res) {
+          console.info('eleven trabajando')
+          const resource = createAudioResource(res);
+          player.play(resource);
+          Subscribe = connection.subscribe(player);
+          //  console.log(Subscribe);
+          interaction.reply({ content: text, ephemeral: true });
+        } else {
+          interaction.reply({ content: 'Ya no puedo hablar mas :(', ephemeral: true });
+        }
+
+      }, (reason) => {
+
+        console.error(reason);
+        interaction.reply({ content: reason, ephemeral: true });
       });
 
-      interaction.reply({ content: text, ephemeral: true });
+
 
     } else {
       interaction.reply('-_-');

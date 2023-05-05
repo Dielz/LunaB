@@ -4,7 +4,7 @@ const { generateDependencyReport, AudioPlayerStatus, joinVoiceChannel, createAud
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('yt')
+        .setName('play')
         .setDescription('play youtube video')
         .addStringOption(option => option.setName('text').setDescription('what ever you want...')),
     //.setGuildOnly(true)
@@ -29,8 +29,9 @@ module.exports = {
         });
 
 
-
         const connection = joinVoiceChannel({
+            selfDeaf: false,
+            selfMute: false,
             channelId: channel.id,
             guildId: interaction.guild.id,
             adapterCreator: voiceChannel.guild.voiceAdapterCreator,//interaction.guild.voiceAdapterCreator,
