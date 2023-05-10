@@ -57,6 +57,7 @@ module.exports = {
         guildId: interaction.guild.id,
         adapterCreator: voiceChannel.guild.voiceAdapterCreator,//interaction.guild.voiceAdapterCreator,
       });
+      var filepath = path.join(__dirname, `../speech/${channel.id}.mp3`);
 
       // connection.on('stateChange', (old_state, new_state) => {
       //   console.log('join', 'Connection state change from', old_state.status, 'to', new_state.status)
@@ -65,14 +66,25 @@ module.exports = {
       //   // }
       // })
 
-      authenticateImplicitWithAdc();
+     // authenticateImplicitWithAdc();
 
       const gtts = new googleTTS.TextToSpeechClient();
       async function quickStart() {
 
-        const request = {
+        const request = { 
+          audioConfig: {
+          audioEncoding: "LINEAR16",
+          effectsProfileId: [
+            "small-bluetooth-speaker-class-device"
+          ],
+          pitch: 0,
+          speakingRate: 1
+        },
           input: { text: text },
-          voice: { languageCode: 'en-US', ssmlGender: 'NEUTRAL' },
+          voice: {
+            languageCode: "es-US",
+            name: "es-US-Neural2-A"
+          },
           audioConfig: { audioEncoding: 'MP3' },
         };
 
@@ -80,11 +92,11 @@ module.exports = {
         const [response] = await gtts.synthesizeSpeech(request);
         // Write the binary audio content to a local file
         const writeFile = util.promisify(fs.writeFile);
-        await writeFile('output.mp3', response.audioContent, 'binary');
+        await writeFile(filepath, response.audioContent, 'binary');
 
-        console.log('Audio content written to file: output.mp3');
+        //console.log('Audio content written to file: output.mp3');
 
-        const resource = createAudioResource(writeFile);
+        const resource = createAudioResource(filepath);
         player.play(resource);
         Subscribe = connection.subscribe(player);
 
