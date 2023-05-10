@@ -28,7 +28,7 @@
     "openai": "^3.1.0",
     "prism-media": "^1.3.4",
     "ttsmp3": "^1.0.1",
-    "ytdl-core": "^4.11.2"
+    "ytdl-core": "^4.11.4"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
