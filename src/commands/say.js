@@ -1,11 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
 const eleven = require('elevenlabs-node');
 
-
 const googleTTS = require('@google-cloud/text-to-speech');
 const fs = require('fs');
 const util = require('util');
-const authenticateImplicitWithAdc = require('../authenticateImplicitWithAdc')
+//const authenticateImplicitWithAdc = require('../authenticateImplicitWithAdc')
 var path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 const { AudioPlayerStatus, NoSubscriberBehavior, joinVoiceChannel, createAudioPlayer, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
@@ -31,6 +30,7 @@ module.exports = {
 
     const text = interaction.options.getString('text');
     const voice = interaction.options.getString('voice');
+    const gtts = new googleTTS.TextToSpeechClient();
 
     const player = createAudioPlayer({
       behaviors: {
@@ -59,60 +59,41 @@ module.exports = {
       });
       var filepath = path.join(__dirname, `../speech/${channel.id}.mp3`);
 
-      // connection.on('stateChange', (old_state, new_state) => {
-      //   console.log('join', 'Connection state change from', old_state.status, 'to', new_state.status)
-      //   // if (old_state.status === VoiceConnectionStatus.Ready && new_state.status === VoiceConnectionStatus.Connecting) {
-      //   //   connection.configureNetworking();
-      //   // }
-      // })
-
-     // authenticateImplicitWithAdc();
-
-      const gtts = new googleTTS.TextToSpeechClient();
-      async function quickStart() {
-
-        const request = { 
-          audioConfig: {
+      const request = {
+        audioConfig: {
           audioEncoding: "LINEAR16",
-          effectsProfileId: [
-            "small-bluetooth-speaker-class-device"
-          ],
+          effectsProfileId: [ "headphone-class-device"],
           pitch: 0,
           speakingRate: 1
         },
-          input: { text: text },
-          voice: {
-            languageCode: "es-US",
-            name: "es-US-Neural2-A"
-          },
-          audioConfig: { audioEncoding: 'MP3' },
-        };
+        input: { text: text },
+        voice: {
+          languageCode: "es-US",
+          name: "es-US-Studio-B"
+        },
+       // audioConfig: { audioEncoding: 'MP3' },
+      };
 
-        // Performs the text-to-speech request
-        const [response] = await gtts.synthesizeSpeech(request);
-        // Write the binary audio content to a local file
-        const writeFile = util.promisify(fs.writeFile);
-        await writeFile(filepath, response.audioContent, 'binary');
+      // Performs the text-to-speech request
+       const [response] = await gtts.synthesizeSpeech(request)
 
-        //console.log('Audio content written to file: output.mp3');
+      // // Write the binary audio content to a local file
+       const writeFile = util.promisify(fs.writeFile);
+       await writeFile(filepath, response.audioContent, 'binary');
 
+      console.log('Audio content written to file: output.mp3');
+      //  console.log(filepath);
         const resource = createAudioResource(filepath);
         player.play(resource);
         Subscribe = connection.subscribe(player);
-
         interaction.reply({ content: text, ephemeral: true });
-
-
-      }
-      quickStart();
-
 
       /////////////////////////////////////////////////// eleven TTS
 
-      // eleven.textToSpeechStream(process.env.ELEVEN_KEY, voice, `${text}.`, 0.60, 0.55).then(res => {
+      // eleven.textToSpeechStream(process.env.ELEVEN_KEY, '21m00Tcm4TlvDq8ikWAM', `${text}.`, 0.60, 0.55).then(res => {
 
       //   if (res) {
-      //     console.info('eleven trabajando')
+      //    // console.info(res)
       //     const resource = createAudioResource(res);
       //     player.play(resource);
       //     Subscribe = connection.subscribe(player);
@@ -122,10 +103,6 @@ module.exports = {
       //     interaction.reply({ content: 'Ya no puedo hablar mas :(', ephemeral: true });
       //   }
 
-      // }, (reason) => {
-
-      //   console.error(reason);
-      //   interaction.reply({ content: reason, ephemeral: true });
       // });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,6 +111,8 @@ module.exports = {
     } else {
       interaction.reply('-_-');
     }
+
+
 
     player.on('stateChange', (oldState, newState) => {
       console.error(`${oldState.status} => ${newState.status}`);
