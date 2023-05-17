@@ -59,51 +59,51 @@ module.exports = {
       });
       var filepath = path.join(__dirname, `../speech/${channel.id}.mp3`);
 
-      // const request = {
-      //   audioConfig: {
-      //     audioEncoding: "LINEAR16",
-      //     effectsProfileId: [ "headphone-class-device"],
-      //     pitch: 0,
-      //     speakingRate: 1
-      //   },
-      //   input: { text: text },
-      //   voice: {
-      //     languageCode: "es-US",
-      //     name: "es-US-Studio-B"
-      //   },
-      //  // audioConfig: { audioEncoding: 'MP3' },
-      // };
+      const request = {
+        audioConfig: {
+          audioEncoding: "LINEAR16",
+          effectsProfileId: [ "headphone-class-device"],
+          pitch: 0,
+          speakingRate: 1
+        },
+        input: { text: text },
+        voice: {
+          languageCode: "es-US",
+          name: "es-US-Studio-B"
+        },
+       // audioConfig: { audioEncoding: 'MP3' },
+      };
 
-      // // Performs the text-to-speech request
-      //  const [response] = await gtts.synthesizeSpeech(request)
+      // Performs the text-to-speech request
+       const [response] = await gtts.synthesizeSpeech(request)
 
-      // // // Write the binary audio content to a local file
-      //  const writeFile = util.promisify(fs.writeFile);
-      //  await writeFile(filepath, response.audioContent, 'binary');
+      // // Write the binary audio content to a local file
+       const writeFile = util.promisify(fs.writeFile);
+       await writeFile(filepath, response.audioContent, 'binary');
 
-      // console.log('Audio content written to file: output.mp3');
-      // //  console.log(filepath);
-      //   const resource = createAudioResource(filepath);
-      //   player.play(resource);
-      //   Subscribe = connection.subscribe(player);
-      //   interaction.reply({ content: text, ephemeral: true });
+      console.log('Audio content written to file: output.mp3');
+      //  console.log(filepath);
+        const resource = createAudioResource(filepath);
+        player.play(resource);
+        Subscribe = connection.subscribe(player);
+      // interaction.reply({ content: 'Talking', ephemeral: true });
 
       /////////////////////////////////////////////////// eleven TTS
 
-      eleven.textToSpeechStream(process.env.ELEVEN_KEY, '21m00Tcm4TlvDq8ikWAM', `${text}.`, 0.60, 0.55).then(res => {
+      // eleven.textToSpeechStream(process.env.ELEVEN_KEY, '21m00Tcm4TlvDq8ikWAM', `${text}.`, 0.60, 0.55).then(res => {
 
-        if (res) {
-         // console.info(res)
-          const resource = createAudioResource(res);
-          player.play(resource);
-          Subscribe = connection.subscribe(player);
-          //  console.log(Subscribe);
-          interaction.reply({ content: text, ephemeral: true });
-        } else {
-          interaction.reply({ content: 'Ya no puedo hablar mas :(', ephemeral: true });
-        }
+      //   if (res) {
+      //    // console.info(res)
+      //     const resource = createAudioResource(res);
+      //     player.play(resource);
+      //     Subscribe = connection.subscribe(player);
+      //     //  console.log(Subscribe);
+      //     interaction.reply({ content: text, ephemeral: true });
+      //   } else {
+      //     interaction.reply({ content: 'Ya no puedo hablar mas :(', ephemeral: true });
+      //   }
 
-      });
+      // });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
