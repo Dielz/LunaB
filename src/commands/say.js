@@ -58,6 +58,7 @@ module.exports = {
         adapterCreator: voiceChannel.guild.voiceAdapterCreator,//interaction.guild.voiceAdapterCreator,
       });
       var filepath = path.join(__dirname, `../speech/${channel.id}.mp3`);
+      var filepath2 = path.join(__dirname, `../speech/tetal.mp3`);
 
       const request = {
         audioConfig: {
@@ -74,18 +75,32 @@ module.exports = {
        // audioConfig: { audioEncoding: 'MP3' },
       };
 
+      // const request = {
+      //   input: { text: text },
+      //   voice: {
+      //     languageCode: "es-US",
+      //     name: "es-US-Wavenet-D" // Usa una voz estándar
+      //   },
+      //   audioConfig: {
+      //     audioEncoding: "MP3", // Cambia a MP3 si quieres archivo mp3
+      //     effectsProfileId: ["headphone-class-device"],
+      //     pitch: 0,
+      //     speakingRate: 1
+      //   }
+      // };
+
       // Performs the text-to-speech request
-       const [response] = await gtts.synthesizeSpeech(request)
+      const [response] = await gtts.synthesizeSpeech(request)
 
       // // Write the binary audio content to a local file
-       const writeFile = util.promisify(fs.writeFile);
-       await writeFile(filepath, response.audioContent, 'binary');
+      const writeFile = util.promisify(fs.writeFile);
+      await writeFile(filepath, response.audioContent, 'binary');
 
       console.log('Audio content written to file: output.mp3');
       //  console.log(filepath);
-        const resource = createAudioResource(filepath);
-        player.play(resource);
-        Subscribe = connection.subscribe(player);
+      const resource = createAudioResource(filepath);
+      player.play(resource);
+      Subscribe = connection.subscribe(player);
       // interaction.reply({ content: 'Talking', ephemeral: true });
 
       /////////////////////////////////////////////////// eleven TTS

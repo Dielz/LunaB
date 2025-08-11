@@ -19,7 +19,7 @@ module.exports = {
             console.log('This member can kick without allowing admin to override');
         }
         //------------------*/
-
+        const queue = [];
 
         if (!msg.content.startsWith('/')) { return; }
 
