@@ -15,21 +15,37 @@ const supabaseKey = process.env.SUPABASE_KEY; // tu anon o servicio key
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Función para buscar categorías relevantes
-async function buscarCategoria(texto) {
-    const embeddingResult = await embedder(texto, { pooling: 'mean', normalize: true });
+async function buscarCategoria(text, limit = 1) {
+    // Crear embedder
+    const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    // Obtener embedding del texto del usuario
+    const embeddingResult = await embedder(text, { pooling: 'mean', normalize: true });
     const queryEmbedding = Array.from(embeddingResult.data);
-
-    const { data, error } = await supabase.rpc('match_categoria', {
+    // Buscar categoría más cercana en Supabase (llamando función RPC)
+    const { data: categorias, error } = await supabase.rpc('match_categoria', {
         query_embedding: queryEmbedding,
-        match_count: 1,
+        match_count: limit
     });
 
     if (error) {
-        console.error('Error buscando categoría:', error);
-        return null;
+        console.error('Error buscando categoría en Supabase:', error);
+        await interaction.editReply('Error buscando categoría en la base de datos.');
+        return;
     }
 
-    return data[0]; // mejor categoría
+    console.log('Categorías encontradas:', categorias);
+
+    // let categoriaSugerida = categorias && categorias.length > 0 ? categorias[0].nombre : 'DOCUMENTO';
+    // let categoriaId = categorias && categorias.length > 0 ? categorias[0].id : 7;
+
+    categorias && categorias.length > 0 ? categorias : [{ nombre: 'DOCUMENTO', id: 7 }];
+
+    let _categoriasSugeridas = categorias.map(c => {
+        return JSON.stringify({ nombre: c.nombre, id: c.id });
+
+    });
+
+    return _categoriasSugeridas; // mejor categoría
 }
 
 async function escaparYFormatearJSON(cadena) {
@@ -67,29 +83,10 @@ module.exports = {
                 return;
             }
 
-            // Crear embedder
-            const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-            // Obtener embedding del texto del usuario
-            const embeddingResult = await embedder(text, { pooling: 'mean', normalize: true });
-            const queryEmbedding = Array.from(embeddingResult.data);
-            // Buscar categoría más cercana en Supabase (llamando función RPC)
-            const { data: categorias, error } = await supabase.rpc('match_categoria', {
-                query_embedding: queryEmbedding,
-                match_count: 1,
-            });
-
-            if (error) {
-                console.error('Error buscando categoría en Supabase:', error);
-                await interaction.editReply('Error buscando categoría en la base de datos.');
-                return;
-            }
-
-
-            let categoriaSugerida = categorias && categorias.length > 0 ? categorias[0].nombre : 'DOCUMENTO';
-            let categoriaId = categorias && categorias.length > 0 ? categorias[0].id : 7;
+            let categoriasSugeridas = await buscarCategoria(text, 10);
 
             // Construir prompt para LM Studio incluyendo la categoría sugerida
-            const promptUser = `${text}\n\nCategoría sugerida para este documento: ${categoriaSugerida} (ID: ${categoriaId}).\nPor favor clasifica y resume el documento en base a esto, respetando el formato JSON que siempre usamos.`;
+            const promptUser = `${text}\n\nCategorías sugeridas para este documento: ${categoriasSugeridas}.\nPor favor clasifica y resume el documento en base a esto, respetando el formato JSON que siempre usamos.`;
 
 
             const chat = Chat.empty();
