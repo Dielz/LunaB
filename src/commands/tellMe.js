@@ -33,7 +33,7 @@ async function buscarCategoria(text, limit = 1) {
         return;
     }
 
-    console.log('Categorías encontradas:', categorias);
+
 
     // let categoriaSugerida = categorias && categorias.length > 0 ? categorias[0].nombre : 'DOCUMENTO';
     // let categoriaId = categorias && categorias.length > 0 ? categorias[0].id : 7;
@@ -41,24 +41,27 @@ async function buscarCategoria(text, limit = 1) {
     categorias && categorias.length > 0 ? categorias : [{ nombre: 'DOCUMENTO', id: 7 }];
 
     let _categoriasSugeridas = categorias.map(c => {
-        return JSON.stringify({ nombre: c.nombre, id: c.id });
-
+        return { nombre: c.nombre, id: c.id };
     });
+    let cat = JSON.stringify(_categoriasSugeridas).replace(/},/g, '},\n')
+    console.log(cat);
 
-    return _categoriasSugeridas; // mejor categoría
+    return cat; 
 }
 
 async function escaparYFormatearJSON(cadena) {
     try {
         const obj = JSON.parse(cadena.replace(/<\|[^>]+?\|>/g, '').replace(/\bassistantfinal\b/gi, '').trim());
         const jsonFormateado = JSON.stringify(obj, null, 2);
-
+        // console.log('\n\nJSON formateado:', jsonFormateado);
         return { jsonFormateado, obj };
     } catch (e) {
         // Si no es un JSON válido, escapar el texto tal cual
 
+        console.log('escaparYFormatearJSON', e)
         const obj = JSON.parse('{"error": "No se pudo formatear el JSON", "resumen":""}');
         const jsonFormateado = JSON.stringify(obj, null, 2);
+        // console.error('\n\nError al formatear JSON:', jsonFormateado);
         return { jsonFormateado, obj }
     }
 }
@@ -83,12 +86,12 @@ module.exports = {
                 return;
             }
 
-            let categoriasSugeridas = await buscarCategoria(text, 10);
+            let categoriasSugeridas = await buscarCategoria(text, 80);
 
             // Construir prompt para LM Studio incluyendo la categoría sugerida
-            const promptUser = `${text}\n\nCategorías sugeridas para este documento: ${categoriasSugeridas}.\nPor favor clasifica y resume el documento en base a esto, respetando el formato JSON que siempre usamos.`;
+            const promptUser = `5. Categorías sugeridas para este documento:\n ${categoriasSugeridas}.\n\n${text}`;
 
-
+            //  console.log('Prompt para LM Studio:', promptUser);
             const chat = Chat.empty();
             chat.append("user", promptUser);
 
@@ -102,13 +105,14 @@ module.exports = {
                     _text += part.content;
                 }
 
-                console.log(part);
+                //console.log(part.content);
+                process.stdout.write(part.content);
                 await interaction.editReply({ content: _text });
             }
 
 
             const result = await prediction.result();
-            const jsonFormateado = escaparYFormatearJSON(result.nonReasoningContent);
+            const jsonFormateado = await escaparYFormatearJSON(result.nonReasoningContent);
 
             console.log('resultado ', result);
 
@@ -130,6 +134,7 @@ module.exports = {
                 adapterCreator: voiceChannel.guild.voiceAdapterCreator,
             });
 
+          
             const request = {
                 audioConfig: {
                     audioEncoding: "LINEAR16",
@@ -137,19 +142,19 @@ module.exports = {
                     pitch: 0,
                     speakingRate: 1
                 },
-                input: { text: result.reasoningContent },
+                input: { text: jsonFormateado.obj.resumen },
                 voice: {
                     // languageCode: "es-US",
                     // name: "es-US-Studio-B"
-                    languageCode: "en-US",
-                    name: "en-us-Chirp3-HD-Leda",
+                    languageCode: "es-US",
+                    name: "es-us-Chirp3-HD-Algenib",
                 },
                 // audioConfig: { audioEncoding: 'MP3' },
             };
 
             let filepath = path.join(__dirname, `../speech/Analysis_completed.mp3`);
 
-            if (result.reasoningContent != '') {
+            if (jsonFormateado.obj.resumen != '') {
                 filepath = path.join(__dirname, `../speech/${channel.id}.mp3`);
                 const [response] = await gtts.synthesizeSpeech(request)
                 const writeFile = util.promisify(fs.writeFile);
@@ -161,8 +166,9 @@ module.exports = {
             Subscribe = connection.subscribe(player);
 
             const finalText = `${result.reasoningContent} \n \`\`\`json\n${jsonFormateado.jsonFormateado}\n\`\`\``;
+            // const categorias = `\`\`\`json\n${categoriasSugeridas}\n\`\`\``;
 
-            console.log('jsonResult', jsonFormateado.obj);
+            // console.log('jsonResult', jsonFormateado.obj);
             const resultEmbed = new EmbedBuilder()
                 .setColor(0x0099FF)
                 .setTitle('Analysis completed')
